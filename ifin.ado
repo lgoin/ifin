@@ -1,36 +1,41 @@
 * Author: Lucia Goin
 * Contact: lgoin@poverty-action.org
-* Purpose: This is a program that checks to see if one macro is inside of another macro
-
-****************************************************************************
+* Purpose: evaluate matches in two local macros
 
 	program ifin, rclass
-
-	syntax anything
 		
-	gettoken contains anything:anything
-	
-	loc check_contains: word count contains
-	
-	if `check_contains' > 1 {
-		di as err "only include one macro to check"
-	}
-	
-	loc contained `anything'		
-	loc n: word count `contained'
-	
-	forvalues i = 1/`n' {
-		gettoken pcontained contained: contained
-		if "`pcontained'" == "`contains'" {
-			return local match "`pcontained'"
+		syntax anything(equalok)
+		
+		gettoken contains anything:anything, parse("=")
+
+		loc containedn: word count `anything'
+		
+		* clean up contained (has the equals sign)
+			foreach thing of loc anything {
+				loc tempthing = subinstr("`thing'", "=", "", .)
+				loc contained `contained' `tempthing'
+			}
+
+		loc check_contains: word count `contains'
+		loc n: word count `contained'
+		
+	forvalues i = 1/`check_contains' {
+		
+		forvalues j = 1/`n' {
+			
+			loc a: word `i' of `contains'
+			loc b: word `j' of `contained'
+			
+			if "`a'" == "`b'" {
+				loc match `match' `b'
+			}
 		}
-		loc pcontained ""
 	}
-	
-	if "`r(match)'" == "" {
+
+	if "`match'" == "" {
 		di as err "match not found"
 	}
-	
-	end 
-	
 
+	return local matches "`match'"
+
+end 
